@@ -1,0 +1,20 @@
+{
+  "log": {
+    "level": 0,
+    "max_age": 2,
+    "max_size": 50000,
+    "file_name": "gw.log",
+    "max_backups": 3
+  },
+
+  "apollo": {
+    "app_id": "6c40088e7e64",
+    "cfg_server": "http://192.168.3.2:8080",
+    "cluster": "default",
+    "name_spaces": [
+      "application",
+      "basic.gateway"
+    ],
+    "local_bak": ".local.cfg"
+  }
+}
