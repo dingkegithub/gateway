@@ -3,3 +3,4 @@ bin
 log
 .local.cfg
 .DS_Store
+**/node_modules
