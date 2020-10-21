@@ -8,20 +8,22 @@
 package webfilter
 
 import (
-	"com.dk.gateway/src/utils/webutils/token"
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dingkegithub/gateway/utils/netutils"
+	"github.com/dingkegithub/gateway/utils/webutils/token"
+	"github.com/gin-gonic/gin"
 )
 
 type Session struct {
 }
 
 func NewSession() *Session {
-	return &Session{
-	}
+	return &Session{}
 }
 
 var SessionInstance *Session
@@ -30,13 +32,10 @@ func init() {
 	SessionInstance = NewSession()
 }
 
-
 func (s *Session) SessionCheck(c *gin.Context) {
 
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-
 	uri := c.Request.RequestURI
-	if strings.Contains(uri, "transfer") {
+	if strings.Contains(uri, "nologin") {
 		c.Next()
 		return
 	}
@@ -59,30 +58,31 @@ func (s *Session) SessionCheck(c *gin.Context) {
 	c.Set("uid", uid)
 	logId := s.genLogId(uid)
 
-	logStr := fmt.Sprintf(" logid=%s ip=%s cmd=", logId, c.Request.RemoteAddr, c.Request.RequestURI)
+	logStr := fmt.Sprintf("logid=%d ip=%s cmd=%s", logId, c.Request.RemoteAddr, c.Request.RequestURI)
 	c.Set("logstr", logStr)
 	c.Set("logid", logId)
 
-	if (!ok) {
-		c.JSONP(200, "session failed")
-		return
+	if !ok {
+		netutils.StdResponse(c, http.StatusUnauthorized, nil)
+		c.Abort()
 	}
 
-	newToken, err := token.Encode(&token.UserPayload{
-		Uid:      uid,
-		Ip:       c.Request.RemoteAddr,
-		DeviceId: c.Param("device_id"),
-	})
+	/*
+		newToken, err := token.Encode(&token.UserPayload{
+			Uid:      uid,
+			Ip:       c.Request.RemoteAddr,
+			DeviceId: c.Param("device_id"),
+		})
 
-	if err != nil {
-		c.SetCookie("PPU", newToken, 86400 * 30, "/", "gz-data.com", true, true)
-	}
-	c.Set("REQ_UID", uid)
-
+		if err != nil {
+			c.SetCookie("PPU", newToken, 86400*30, "/", "gz-data.com", true, true)
+		}
+		c.Set("REQ_UID", uid)
+	*/
 	c.Next()
 }
 
-func (s *Session) check(session string, uid int64, c *gin.Context) bool  {
+func (s *Session) check(session string, uid int64, c *gin.Context) bool {
 	if session == "" {
 		return false
 	}
@@ -117,5 +117,5 @@ func (s *Session) check(session string, uid int64, c *gin.Context) bool  {
 
 func (s *Session) genLogId(param int64) int64 {
 	ms := time.Now().Unix() * 1000
-	return ms & 0x7FFFFFFF | (param >> 8 & 65535) << 47
+	return ms&0x7FFFFFFF | (param>>8&65535)<<47
 }

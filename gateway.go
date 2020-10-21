@@ -1,11 +1,7 @@
 package main
 
-import "com.dk.gateway/src/boot"
+import "github.com/dingkegithub/gateway/boot"
 
 func main() {
 	boot.Boot()
 }
-
-
-
-

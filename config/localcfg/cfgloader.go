@@ -1,22 +1,22 @@
 package localcfg
 
 import (
-	"com.dk.gateway/src/utils/osutils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+
+	"github.com/dingkegithub/gateway/utils/osutils"
 )
 
-
 type CfgLoader struct {
-	cfgFile string
+	cfgFile  string
 	localCfg *LocalCfg
 }
 
 func NewCfgLoader(f string) (*CfgLoader, error) {
 
-	if ! (osutils.Exists(f) && osutils.IsFile(f)) {
+	if !(osutils.Exists(f) && osutils.IsFile(f)) {
 		return nil, errors.New(fmt.Sprintf("file not exist: %s", f))
 	}
 
@@ -31,7 +31,7 @@ func NewCfgLoader(f string) (*CfgLoader, error) {
 		return nil, err
 	}
 
-	return &CfgLoader {
+	return &CfgLoader{
 		cfgFile:  f,
 		localCfg: localCfg,
 	}, nil

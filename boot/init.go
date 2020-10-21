@@ -1,17 +1,17 @@
 package boot
 
 import (
-	"com.dk.gateway/src/common/logging"
-	"com.dk.gateway/src/config"
-	"com.dk.gateway/src/config/localcfg"
-	"com.dk.gateway/src/route"
 	"flag"
-	"fmt"
 	"os"
 	"path"
+
+	"github.com/dingkegithub/gateway/common/logging"
+	"github.com/dingkegithub/gateway/config"
+	"github.com/dingkegithub/gateway/config/localcfg"
+	"github.com/dingkegithub/gateway/route"
 )
 
-func Boot()  {
+func Boot() {
 	workDir := flag.String("work_dir", "", "--word_dir project root direction")
 	cfgFile := flag.String("conf", "", "--conf config file")
 	flag.Parse()
@@ -35,11 +35,9 @@ func Boot()  {
 	logging.LogInit(path.Join(logDir, logCfg.FileName),
 		logCfg.MaxSize, logCfg.MaxBackups, logCfg.MaxAge, logCfg.Level)
 
-	hotCfg := config.NewHotConfig(cfgLoader.GetApolloCfg())
-	err = hotCfg.Start()
-	if err != nil {
-		panic(fmt.Sprintf("init config failed %s", err.Error()))
-	}
+	logging.Info("initing config center")
+	config.NewHotCfg(cfgLoader.GetApolloCfg())
+	logging.Info("inited config center")
 
 	route.Route()
 }

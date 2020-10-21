@@ -1,11 +1,12 @@
 package netutils
 
 import (
-	"com.dk.gateway/src/common/logging"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/dingkegithub/gateway/common/logging"
+	"go.uber.org/zap"
 )
 
 func LongPolling(watchUrl string, timeout time.Duration) ([]byte, error) {

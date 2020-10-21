@@ -8,12 +8,11 @@
   },
 
   "apollo": {
-    "app_id": "6c40088e7e64",
-    "cfg_server": "http://192.168.3.2:8080",
+    "app_id": "GatewayId",
+    "cfg_server": "http://127.0.0.1:8080",
     "cluster": "default",
     "name_spaces": [
-      "application",
-      "basic.gateway"
+      "application"
     ],
     "local_bak": ".local.cfg"
   }

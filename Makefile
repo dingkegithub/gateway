@@ -9,7 +9,7 @@ RELEASE_VERSION=$(TARGET)_$(INSTALL_TIME)
 
 $(TARGET): prebuilt
 	#@GOOS=$(OS) GOARCH=$(ARCH) go build -o $(BIN)/$@ src/gateway.go
-	go build -o $(BIN)/$@ src/gateway.go
+	go build -o $(BIN)/$@ gateway.go
 
 prebuilt:
 	@mkdir -p $(BIN)

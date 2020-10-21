@@ -1,14 +1,16 @@
 package route
 
 import (
-	"com.dk.gateway/src/webfilter"
 	"fmt"
+
+	"github.com/dingkegithub/gateway/webfilter"
 	"github.com/gin-gonic/gin"
 )
 
-func Route()  {
+func Route() {
+	corsInstance := webfilter.NewCors()
 	route := gin.Default()
-	route.Use(webfilter.CorsInstance.CorsCheck)
+	route.Use(corsInstance.CorsCheck)
 	route.Use(webfilter.SessionInstance.SessionCheck)
 	route.OPTIONS("/api/:model/*cmd", Entry)
 	route.POST("/api/:model/*cmd", Entry)
