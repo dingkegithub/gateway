@@ -1,9 +1,10 @@
 /*
  * session: 具有一定时效性的加密字符串，通常服务端生成和解析
  * 一般包含字段：DeviceId, ClientType, Uid, timestamp
- * 1. 首先查看请求是否需要进行session验证，要么url标记，要么通过uri获取service判断服务是否登录验证
- * 2. 从url中提取或从cookie中提取token
- * 3. 校验token是否有效或过期，若是有效或者过期，重新生成一遍刷新用户token
+ * 0. 判定是否要session验证
+ * 1. cookie 中的session和用户请求session是否一致, 不一致则返回，要求用户重新登录
+ * 2. session 过期，则请求用户登录服务刷新用户session
+ * 3. 生成请求唯一标志logid， logstr
  */
 package webfilter
 
@@ -14,8 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dingkegithub/gateway/common"
 	"github.com/dingkegithub/gateway/utils/netutils"
-	"github.com/dingkegithub/gateway/utils/webutils/token"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,41 +45,38 @@ func (s *Session) SessionCheck(c *gin.Context) {
 	var session string
 
 	cookies := c.Request.Cookies()
+	// when login, response set
+	// Set-Cookie:: uid=xxx
+	// Set-Cookie: session=xxxxxxxxxxxx
 	if cookies != nil && len(cookies) > 0 {
 		for _, cookie := range cookies {
-			if "uid" == cookie.Name {
+			if common.REQ_ID == cookie.Name {
 				uid, _ = strconv.ParseInt(cookie.Value, 10, 64)
-			} else if "session" == cookie.Name {
+			} else if common.REQ_SESSION == cookie.Name {
 				session = cookie.Value
 			}
 		}
 	}
 
-	ok := s.check(session, uid, c)
-	c.Set("uid", uid)
-	logId := s.genLogId(uid)
-
-	logStr := fmt.Sprintf("logid=%d ip=%s cmd=%s", logId, c.Request.RemoteAddr, c.Request.RequestURI)
-	c.Set("logstr", logStr)
-	c.Set("logid", logId)
-
-	if !ok {
-		netutils.StdResponse(c, http.StatusUnauthorized, nil)
+	if session == "" || uid < 0 {
+		netutils.StdResponse(c, http.StatusUnauthorized, netutils.BuildResponseBody(403, "need login", nil))
 		c.Abort()
+		return
 	}
 
-	/*
-		newToken, err := token.Encode(&token.UserPayload{
-			Uid:      uid,
-			Ip:       c.Request.RemoteAddr,
-			DeviceId: c.Param("device_id"),
-		})
+	ok := s.check(session, uid, c)
+	if !ok {
+		netutils.StdResponse(c, http.StatusUnauthorized, netutils.BuildResponseBody(403, "login expire and relogin", nil))
+		c.Abort()
+		return
+	}
 
-		if err != nil {
-			c.SetCookie("PPU", newToken, 86400*30, "/", "gz-data.com", true, true)
-		}
-		c.Set("REQ_UID", uid)
-	*/
+	logId := s.genLogId(uid)
+	c.Set(common.LOG_ID, logId)
+
+	logStr := fmt.Sprintf("logid=%d ip=%s cmd=%s", logId, c.Request.RemoteAddr, c.Request.RequestURI)
+	c.Set(common.LOG_STR, logStr)
+
 	c.Next()
 }
 
@@ -88,7 +86,7 @@ func (s *Session) check(session string, uid int64, c *gin.Context) bool {
 	}
 
 	var tokenStr string
-	tokenStr = c.Query("token")
+	tokenStr = c.Query(common.REQ_TOKEN)
 	if tokenStr == "" {
 		tokenStr = c.PostForm("token")
 		if tokenStr == "" {
@@ -103,16 +101,16 @@ func (s *Session) check(session string, uid int64, c *gin.Context) bool {
 		return false
 	}
 
-	_, expire, err := token.Decode(tokenStr)
-	if err != nil {
-		return false
+	if tokenStr == session {
+		return true
 	}
 
-	if expire {
-		//ToDo 调用用户逻辑层请求更新用户token
-	}
-
-	return true
+	// ToDo: session expire
+	//       if session expire, gw need flush session by
+	//       call user login service
+	//func (c *Context) SetCookie(name, value string, maxAge int, path, domain string, secure, httpOnly bool) {
+	//c.SetCookie("uid", "1111111", time.Hour, "/",  "dgw.com", false, false)
+	return false
 }
 
 func (s *Session) genLogId(param int64) int64 {

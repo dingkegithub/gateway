@@ -9,9 +9,11 @@ import (
 
 func Route() {
 	corsInstance := webfilter.NewCors()
+	antispam := webfilter.NewAntispam()
 	route := gin.Default()
 	route.Use(corsInstance.CorsCheck)
 	route.Use(webfilter.SessionInstance.SessionCheck)
+	route.Use(antispam.SpamCheck)
 	route.OPTIONS("/api/:model/*cmd", Entry)
 	route.POST("/api/:model/*cmd", Entry)
 	route.GET("/api/:model/*cmd", Entry)
